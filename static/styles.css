@@ -1,0 +1,12 @@
+.table-wrapper {
+  max-height: 70vh;
+  overflow: auto;
+}
+
+table {
+  font-size: 0.85rem;
+}
+
+td, th {
+  white-space: nowrap;
+}
