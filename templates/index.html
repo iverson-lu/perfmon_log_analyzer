@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section>
+  <hgroup>
+    <h1>PerfMon Log Analyzer</h1>
+    <p>Loaded {{ metric_count }} counters from <strong>{{ csv_name }}</strong>.</p>
+  </hgroup>
+  <details>
+    <summary>Category overview</summary>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Min</th>
+          <th>Average</th>
+          <th>Max</th>
+          <th>Matched Metrics</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for category, stats in category_stats.items()|sort %}
+        <tr>
+          <td>{{ category }}</td>
+          <td>{{ '%.2f'|format(stats.min) }}</td>
+          <td>{{ '%.2f'|format(stats.avg) }}</td>
+          <td>{{ '%.2f'|format(stats.max) }}</td>
+          <td>
+            <details>
+              <summary>{{ stats.metrics|length }} metrics</summary>
+              <ul>
+                {% for metric in stats.metrics|sort %}
+                <li>{{ metric }}</li>
+                {% endfor %}
+              </ul>
+            </details>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+</section>
+
+<section>
+  <h2>Per-metric statistics</h2>
+  <p>Showing {{ metric_stats|length }} metrics (page {{ page }} of {{ total_pages }}). Use query parameters <code>?page=&lt;n&gt;&amp;per_page=&lt;n&gt;</code> to paginate.</p>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Min</th>
+          <th>Average</th>
+          <th>Max</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stat in metric_stats %}
+        <tr>
+          <td>{{ stat.name }}</td>
+          <td>{{ '%.2f'|format(stat.min) }}</td>
+          <td>{{ '%.2f'|format(stat.avg) }}</td>
+          <td>{{ '%.2f'|format(stat.max) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
