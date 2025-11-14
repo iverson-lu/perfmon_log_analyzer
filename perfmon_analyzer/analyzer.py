@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple
 
 import pandas as pd
 
@@ -48,7 +48,7 @@ class PerfmonAnalyzer:
         self._dataframe: pd.DataFrame | None = None
         self._numeric_dataframe: pd.DataFrame | None = None
         self._metric_stats: List[MetricStat] | None = None
-        self._category_stats: Dict[str, Dict[str, float]] | None = None
+        self._category_stats: Dict[str, Dict[str, Any]] | None = None
 
     def load(self) -> None:
         """Loads the CSV file into a pandas DataFrame."""
@@ -113,28 +113,50 @@ class PerfmonAnalyzer:
                 return category
         return "Other"
 
-    def category_stats(self) -> Dict[str, Dict[str, float]]:
+    def _split_perfmon_path(self, metric_name: str) -> Tuple[str, str]:
+        """Extract the high level category and counter from a PerfMon path."""
+
+        parts = [part.strip() for part in metric_name.split("\\") if part]
+        if len(parts) >= 3:
+            category_part = parts[-2]
+            counter = parts[-1]
+        elif len(parts) == 2:
+            category_part = parts[0]
+            counter = parts[1]
+        else:
+            category_part = metric_name
+            counter = metric_name
+
+        # Normalize to make categories such as "GPU Engine(pid_123)" easier to scan.
+        normalized_category = category_part.split("(")[0].strip() or category_part
+        if normalized_category == metric_name:
+            normalized_category = self._match_category(metric_name)
+        return normalized_category, counter
+
+    def category_stats(self) -> Dict[str, Dict[str, Any]]:
         if self._category_stats is not None:
             return self._category_stats
 
-        numeric_df = self.numeric_dataframe
-        category_frames: Dict[str, List[str]] = {}
-        for column in numeric_df.columns:
-            category = self._match_category(column)
-            category_frames.setdefault(category, []).append(column)
+        category_stats: Dict[str, Dict[str, Any]] = {}
+        for stat in self.metric_stats():
+            category, counter = self._split_perfmon_path(stat.name)
+            bucket = category_stats.setdefault(category, {"metrics": []})
+            bucket["metrics"].append(
+                {
+                    "name": counter,
+                    "full_name": stat.name,
+                    "min": stat.min,
+                    "max": stat.max,
+                    "avg": stat.avg,
+                }
+            )
 
-        category_stats: Dict[str, Dict[str, float]] = {}
-        for category, columns in category_frames.items():
-            subset = numeric_df[columns]
-            series = subset.mean(axis=1, skipna=True)
-            if series.dropna().empty:
-                continue
-            category_stats[category] = {
-                "min": float(series.min()),
-                "max": float(series.max()),
-                "avg": float(series.mean()),
-                "metrics": columns,
-            }
+        for bucket in category_stats.values():
+            metrics: List[Dict[str, Any]] = bucket["metrics"]
+            metrics.sort(key=lambda entry: entry["name"].lower())
+            bucket["min"] = min(metric["min"] for metric in metrics)
+            bucket["max"] = max(metric["max"] for metric in metrics)
+            bucket["avg"] = sum(metric["avg"] for metric in metrics) / len(metrics)
 
         self._category_stats = category_stats
         return category_stats

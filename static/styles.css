@@ -10,3 +10,14 @@ table {
 td, th {
   white-space: nowrap;
 }
+
+details.category-breakdown {
+  margin-bottom: 0.75rem;
+}
+
+details.category-breakdown summary {
+  cursor: pointer;
+  display: flex;
+  gap: 0.25rem;
+  align-items: baseline;
+}

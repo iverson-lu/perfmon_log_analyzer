@@ -8,37 +8,38 @@
   </hgroup>
   <details>
     <summary>Category overview</summary>
-    <table>
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Min</th>
-          <th>Average</th>
-          <th>Max</th>
-          <th>Matched Metrics</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for category, stats in category_stats.items()|sort %}
-        <tr>
-          <td>{{ category }}</td>
-          <td>{{ '%.2f'|format(stats.min) }}</td>
-          <td>{{ '%.2f'|format(stats.avg) }}</td>
-          <td>{{ '%.2f'|format(stats.max) }}</td>
-          <td>
-            <details>
-              <summary>{{ stats.metrics|length }} metrics</summary>
-              <ul>
-                {% for metric in stats.metrics|sort %}
-                <li>{{ metric }}</li>
-                {% endfor %}
-              </ul>
-            </details>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% for category, stats in category_stats.items()|sort %}
+    <details class="category-breakdown">
+      <summary>
+        <strong>{{ category }}</strong>
+        <small>({{ stats.metrics|length }} counters · avg {{ '%.2f'|format(stats.avg) }})</small>
+      </summary>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Counter</th>
+              <th>Min</th>
+              <th>Average</th>
+              <th>Max</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for metric in stats.metrics %}
+            <tr>
+              <td>{{ metric.name }}</td>
+              <td>{{ '%.2f'|format(metric.min) }}</td>
+              <td>{{ '%.2f'|format(metric.avg) }}</td>
+              <td>{{ '%.2f'|format(metric.max) }}</td>
+              <td><code>{{ metric.full_name }}</code></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    {% endfor %}
   </details>
 </section>
 
